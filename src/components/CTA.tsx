@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, Star } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CTA = () => {
   return (
@@ -26,13 +27,15 @@ const CTA = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">
-              <Button 
-                size="lg" 
-                className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold text-lg px-8 py-3 hover-scale"
-              >
-                Get Started Free
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
+              <Link to="/signup">
+                <Button 
+                  size="lg" 
+                  className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold text-lg px-8 py-3 hover-scale"
+                >
+                  Get Started Free
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
               <Button 
                 variant="outline" 
                 size="lg" 

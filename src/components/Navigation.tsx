@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -14,9 +15,11 @@ const Navigation = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold text-foreground">
-              Pay<span className="text-paypal-primary">Pals</span>
-            </h1>
+            <Link to="/">
+              <h1 className="text-2xl font-bold text-foreground">
+                Pay<span className="text-paypal-primary">Pals</span>
+              </h1>
+            </Link>
           </div>
 
           {/* Desktop Navigation */}
@@ -36,13 +39,17 @@ const Navigation = () => {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" className="text-foreground hover:text-paypal-highlight">
-              <LogIn className="w-4 h-4 mr-2" />
-              Sign In
-            </Button>
-            <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold">
-              Get Started
-            </Button>
+            <Link to="/login">
+              <Button variant="ghost" className="text-foreground hover:text-paypal-highlight">
+                <LogIn className="w-4 h-4 mr-2" />
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/signup">
+              <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold">
+                Get Started
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
@@ -85,13 +92,17 @@ const Navigation = () => {
               </a>
               <div className="pt-4 pb-3 border-t border-border">
                 <div className="flex flex-col space-y-2">
-                  <Button variant="ghost" className="justify-start text-foreground hover:text-paypal-highlight">
-                    <LogIn className="w-4 h-4 mr-2" />
-                    Sign In
-                  </Button>
-                  <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold">
-                    Get Started
-                  </Button>
+                  <Link to="/login">
+                    <Button variant="ghost" className="justify-start text-foreground hover:text-paypal-highlight w-full">
+                      <LogIn className="w-4 h-4 mr-2" />
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/signup">
+                    <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold w-full">
+                      Get Started
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </div>

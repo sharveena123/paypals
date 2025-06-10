@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const About = () => {
   const benefits = [
@@ -40,12 +41,14 @@ const About = () => {
             </div>
 
             <div className="pt-4">
-              <Button 
-                size="lg" 
-                className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold hover-scale"
-              >
-                Start Splitting Today
-              </Button>
+              <Link to="/signup">
+                <Button 
+                  size="lg" 
+                  className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold hover-scale"
+                >
+                  Start Splitting Today
+                </Button>
+              </Link>
             </div>
           </div>
 
