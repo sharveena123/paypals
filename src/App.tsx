@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import Groups from "./pages/Groups";
+import CreateGroup from "./pages/CreateGroup";
 import AddExpense from "./pages/AddExpense";
 import SettleUp from "./pages/SettleUp";
 import Profile from "./pages/Profile";
@@ -30,6 +31,7 @@ const App = () => (
           <Route path="/signup" element={<SignUp />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/groups" element={<Groups />} />
+          <Route path="/groups/create" element={<CreateGroup />} />
           <Route path="/add-expense" element={<AddExpense />} />
           <Route path="/settle-up" element={<SettleUp />} />
           <Route path="/profile" element={<Profile />} />

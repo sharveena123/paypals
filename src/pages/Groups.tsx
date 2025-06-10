@@ -1,11 +1,15 @@
 
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Users, ArrowLeft, Receipt } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Plus, Users, ArrowLeft, Receipt, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 const Groups = () => {
-  const groups = [
+  const { toast } = useToast();
+  const [groups, setGroups] = useState([
     {
       id: 1,
       name: "Weekend Friends",
@@ -45,7 +49,15 @@ const Groups = () => {
         { id: 9, description: "Groceries", amount: 330.00, paidBy: "Alex", date: "2024-01-05" }
       ]
     }
-  ];
+  ]);
+
+  const handleDeleteGroup = (groupId: number, groupName: string) => {
+    setGroups(groups.filter(group => group.id !== groupId));
+    toast({
+      title: "Group deleted",
+      description: `${groupName} has been deleted successfully.`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -68,10 +80,12 @@ const Groups = () => {
                 <p className="text-muted-foreground">Manage your expense groups</p>
               </div>
             </div>
-            <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90">
-              <Plus className="w-4 h-4 mr-2" />
-              Create Group
-            </Button>
+            <Link to="/groups/create">
+              <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90">
+                <Plus className="w-4 h-4 mr-2" />
+                Create Group
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
@@ -86,13 +100,39 @@ const Groups = () => {
                     <CardTitle className="text-xl">{group.name}</CardTitle>
                     <CardDescription>{group.members.length} members • ${group.totalExpenses.toFixed(2)} total</CardDescription>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-lg font-bold ${group.balance > 0 ? 'text-paypal-primary' : 'text-paypal-secondary'}`}>
-                      {group.balance > 0 ? '+' : ''}${Math.abs(group.balance).toFixed(2)}
+                  <div className="flex items-center gap-2">
+                    <div className="text-right">
+                      <div className={`text-lg font-bold ${group.balance > 0 ? 'text-paypal-primary' : 'text-paypal-secondary'}`}>
+                        {group.balance > 0 ? '+' : ''}${Math.abs(group.balance).toFixed(2)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {group.balance > 0 ? 'You are owed' : 'You owe'}
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {group.balance > 0 ? 'You are owed' : 'You owe'}
-                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Group</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{group.name}"? This action cannot be undone and will remove all expenses and data associated with this group.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteGroup(group.id, group.name)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete Group
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-3">
