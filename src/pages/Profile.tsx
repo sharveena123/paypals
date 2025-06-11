@@ -1,18 +1,24 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { ArrowLeft, User, Camera } from "lucide-react";
+import { ArrowLeft, User, Camera, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import { useToast } from "@/hooks/use-toast";
 
 const Profile = () => {
+  const { user, signOut } = useAuth();
+  const { profile, updateProfile } = useProfile();
+  const { toast } = useToast();
+  
   const [formData, setFormData] = useState({
-    name: "Alex Johnson",
-    email: "alex.johnson@email.com",
-    phone: "+1 (555) 123-4567"
+    full_name: "",
+    email: ""
   });
 
   const [preferences, setPreferences] = useState({
@@ -22,10 +28,43 @@ const Profile = () => {
     emailUpdates: true
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || "",
+        email: profile.email || ""
+      });
+    }
+  }, [profile]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Update profile:", { formData, preferences });
-    // TODO: Implement actual profile update logic
+    
+    const result = await updateProfile({
+      full_name: formData.full_name,
+      email: formData.email
+    });
+
+    if (result?.error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      });
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully",
+    });
   };
 
   const currencies = ["USD", "EUR", "GBP", "CAD", "AUD"];
@@ -35,20 +74,26 @@ const Profile = () => {
       {/* Header */}
       <div className="bg-white border-b border-border">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="mr-4">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center">
-                <User className="w-6 h-6 mr-3" />
-                Profile
-              </h1>
-              <p className="text-muted-foreground">Manage your account settings</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Link to="/dashboard" className="mr-4">
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+              </Link>
+              <div>
+                <h1 className="text-2xl font-bold text-foreground flex items-center">
+                  <User className="w-6 h-6 mr-3" />
+                  Profile
+                </h1>
+                <p className="text-muted-foreground">Manage your account settings</p>
+              </div>
             </div>
+            <Button variant="outline" onClick={handleSignOut}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
+            </Button>
           </div>
         </div>
       </div>
@@ -68,7 +113,7 @@ const Profile = () => {
                     <User className="w-10 h-10 text-black" />
                   </div>
                   <div>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" type="button">
                       <Camera className="w-4 h-4 mr-2" />
                       Change Photo
                     </Button>
@@ -81,8 +126,8 @@ const Profile = () => {
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      value={formData.full_name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                       required
                     />
                   </div>
@@ -95,16 +140,6 @@ const Profile = () => {
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -172,22 +207,6 @@ const Profile = () => {
                     onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, emailUpdates: checked }))}
                   />
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Danger Zone */}
-          <Card className="border-destructive/20">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Delete Account</div>
-                  <div className="text-sm text-muted-foreground">Permanently delete your account and all data</div>
-                </div>
-                <Button variant="destructive">Delete Account</Button>
               </div>
             </CardContent>
           </Card>

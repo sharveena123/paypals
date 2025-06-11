@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft, Users, Plus, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CreateGroup = () => {
   const [groupName, setGroupName] = useState("");
@@ -16,6 +18,7 @@ const CreateGroup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const addMember = () => {
     if (newMember.trim() && !members.includes(newMember.trim())) {
@@ -40,26 +43,54 @@ const CreateGroup = () => {
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to create a group.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log("Creating group:", {
-        name: groupName,
-        description,
-        members: [...members, "You"], // Include current user
-      });
+      // Create the group
+      const { data: group, error: groupError } = await supabase
+        .from('groups')
+        .insert({
+          name: groupName,
+          description,
+          created_by: user.id
+        })
+        .select()
+        .single();
+
+      if (groupError) {
+        throw groupError;
+      }
+
+      // Add creator as a member
+      const { error: memberError } = await supabase
+        .from('group_members')
+        .insert({
+          group_id: group.id,
+          user_id: user.id,
+          role: 'admin'
+        });
+
+      if (memberError) {
+        throw memberError;
+      }
       
       toast({
         title: "Group created!",
         description: `${groupName} has been created successfully.`,
       });
       
-      // Redirect to groups page
       navigate("/groups");
     } catch (error) {
+      console.error('Error creating group:', error);
       toast({
         title: "Failed to create group",
         description: "Please try again.",
@@ -128,49 +159,10 @@ const CreateGroup = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <Label>Add Members</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Enter member name or email"
-                      value={newMember}
-                      onChange={(e) => setNewMember(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addMember())}
-                      disabled={isLoading}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={addMember}
-                      variant="outline"
-                      disabled={isLoading}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  {members.length > 0 && (
-                    <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Members:</Label>
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between p-2 bg-muted/50 rounded text-sm">
-                          <span>You (Group creator)</span>
-                        </div>
-                        {members.map((member, index) => (
-                          <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                            <span className="text-sm">{member}</span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeMember(member)}
-                              disabled={isLoading}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                  <Label>Add Members (Coming Soon)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Member invitation functionality will be available soon. For now, you can create the group and add members later.
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">

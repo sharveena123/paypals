@@ -3,8 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Users, Receipt, Activity, DollarSign } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
+import { useGroups } from "@/hooks/useGroups";
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const { profile } = useProfile();
+  const { groups } = useGroups();
+
+  // Mock data for now - will be replaced with real data from database
   const mockData = {
     totalSpent: 1245.50,
     youOwe: 156.25,
@@ -13,11 +21,6 @@ const Dashboard = () => {
       { id: 1, description: "Dinner at Tony's", amount: 39.20, group: "Weekend Friends", time: "2 hours ago" },
       { id: 2, description: "Grocery shopping", amount: 45.60, group: "Roommates", time: "1 day ago" },
       { id: 3, description: "Movie tickets", amount: 12.50, group: "Date Night", time: "3 days ago" }
-    ],
-    groups: [
-      { id: 1, name: "Weekend Friends", members: 4, balance: -39.20, lastActivity: "2 hours ago" },
-      { id: 2, name: "Roommates", balance: 67.50, members: 3, lastActivity: "1 day ago" },
-      { id: 3, name: "Mountain Trip", balance: -89.75, members: 5, lastActivity: "1 week ago" }
     ]
   };
 
@@ -31,7 +34,9 @@ const Dashboard = () => {
               <h1 className="text-2xl font-bold text-foreground">
                 Pay<span className="text-paypal-primary">Pals</span>
               </h1>
-              <p className="text-muted-foreground">Welcome back, Alex!</p>
+              <p className="text-muted-foreground">
+                Welcome back, {profile?.full_name || user?.email || 'User'}!
+              </p>
             </div>
             <div className="flex gap-3">
               <Link to="/add-expense">
@@ -100,17 +105,28 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockData.groups.map((group) => (
-                  <div key={group.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div>
-                      <div className="font-medium">{group.name}</div>
-                      <div className="text-sm text-muted-foreground">{group.members} members • {group.lastActivity}</div>
+                {groups.length > 0 ? (
+                  groups.slice(0, 3).map((group) => (
+                    <div key={group.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                      <div>
+                        <div className="font-medium">{group.name}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {group.description || 'No description'} • Created {new Date(group.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="font-semibold text-muted-foreground">
+                        $0.00
+                      </div>
                     </div>
-                    <div className={`font-semibold ${group.balance > 0 ? 'text-paypal-primary' : 'text-paypal-secondary'}`}>
-                      {group.balance > 0 ? '+' : ''}${Math.abs(group.balance).toFixed(2)}
-                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground">No groups yet</p>
+                    <Link to="/groups/create">
+                      <Button variant="link">Create your first group</Button>
+                    </Link>
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>
@@ -131,15 +147,12 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockData.recentActivities.map((activity) => (
-                  <div key={activity.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div>
-                      <div className="font-medium">{activity.description}</div>
-                      <div className="text-sm text-muted-foreground">{activity.group} • {activity.time}</div>
-                    </div>
-                    <div className="font-semibold">${activity.amount.toFixed(2)}</div>
-                  </div>
-                ))}
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">No recent activity</p>
+                  <Link to="/add-expense">
+                    <Button variant="link">Add your first expense</Button>
+                  </Link>
+                </div>
               </div>
             </CardContent>
           </Card>
