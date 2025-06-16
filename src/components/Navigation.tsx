@@ -39,13 +39,13 @@ const Navigation = () => {
 
           {/* Desktop CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/login">
+            <Link to="/auth">
               <Button variant="ghost" className="text-foreground hover:text-paypal-highlight">
                 <LogIn className="w-4 h-4 mr-2" />
                 Sign In
               </Button>
             </Link>
-            <Link to="/signup">
+            <Link to="/auth">
               <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold">
                 Get Started
               </Button>
@@ -92,13 +92,13 @@ const Navigation = () => {
               </a>
               <div className="pt-4 pb-3 border-t border-border">
                 <div className="flex flex-col space-y-2">
-                  <Link to="/login">
+                  <Link to="/auth">
                     <Button variant="ghost" className="justify-start text-foreground hover:text-paypal-highlight w-full">
                       <LogIn className="w-4 h-4 mr-2" />
                       Sign In
                     </Button>
                   </Link>
-                  <Link to="/signup">
+                  <Link to="/auth">
                     <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90 font-semibold w-full">
                       Get Started
                     </Button>
