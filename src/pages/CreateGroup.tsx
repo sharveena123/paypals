@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Users, Plus, X } from "lucide-react";
+import { ArrowLeft, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,23 +13,10 @@ import { useAuth } from "@/contexts/AuthContext";
 const CreateGroup = () => {
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
-  const [members, setMembers] = useState<string[]>([]);
-  const [newMember, setNewMember] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-
-  const addMember = () => {
-    if (newMember.trim() && !members.includes(newMember.trim())) {
-      setMembers([...members, newMember.trim()]);
-      setNewMember("");
-    }
-  };
-
-  const removeMember = (memberToRemove: string) => {
-    setMembers(members.filter(member => member !== memberToRemove));
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +47,7 @@ const CreateGroup = () => {
         .from('groups')
         .insert({
           name: groupName,
-          description,
+          description: description || null,
           created_by: user.id
         })
         .select()

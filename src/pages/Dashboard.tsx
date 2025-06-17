@@ -6,23 +6,13 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useGroups } from "@/hooks/useGroups";
+import { useExpenses } from "@/hooks/useExpenses";
 
 const Dashboard = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const { groups } = useGroups();
-
-  // Mock data for now - will be replaced with real data from database
-  const mockData = {
-    totalSpent: 1245.50,
-    youOwe: 156.25,
-    youAreOwed: 89.75,
-    recentActivities: [
-      { id: 1, description: "Dinner at Tony's", amount: 39.20, group: "Weekend Friends", time: "2 hours ago" },
-      { id: 2, description: "Grocery shopping", amount: 45.60, group: "Roommates", time: "1 day ago" },
-      { id: 3, description: "Movie tickets", amount: 12.50, group: "Date Night", time: "3 days ago" }
-    ]
-  };
+  const { expenses, userStats } = useExpenses();
 
   return (
     <div className="min-h-screen bg-muted/30">
@@ -65,7 +55,7 @@ const Dashboard = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${mockData.totalSpent.toFixed(2)}</div>
+              <div className="text-2xl font-bold">${userStats.totalSpent.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">Across all groups</p>
             </CardContent>
           </Card>
@@ -75,7 +65,7 @@ const Dashboard = () => {
               <Receipt className="h-4 w-4 text-paypal-secondary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-paypal-secondary">${mockData.youOwe.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-paypal-secondary">${userStats.youOwe.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">To your friends</p>
             </CardContent>
           </Card>
@@ -85,7 +75,7 @@ const Dashboard = () => {
               <DollarSign className="h-4 w-4 text-paypal-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-paypal-primary">${mockData.youAreOwed.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-paypal-primary">${userStats.youAreOwed.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground">From your friends</p>
             </CardContent>
           </Card>
@@ -111,11 +101,13 @@ const Dashboard = () => {
                       <div>
                         <div className="font-medium">{group.name}</div>
                         <div className="text-sm text-muted-foreground">
-                          {group.description || 'No description'} • Created {new Date(group.created_at).toLocaleDateString()}
+                          {group.description || 'No description'} • {group.member_count} members
                         </div>
                       </div>
-                      <div className="font-semibold text-muted-foreground">
-                        $0.00
+                      <div className={`font-semibold ${
+                        (group.user_balance || 0) >= 0 ? 'text-paypal-primary' : 'text-paypal-secondary'
+                      }`}>
+                        {(group.user_balance || 0) >= 0 ? '+' : ''}${Math.abs(group.user_balance || 0).toFixed(2)}
                       </div>
                     </div>
                   ))
@@ -147,12 +139,28 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="text-center py-4">
-                  <p className="text-muted-foreground">No recent activity</p>
-                  <Link to="/add-expense">
-                    <Button variant="link">Add your first expense</Button>
-                  </Link>
-                </div>
+                {expenses.length > 0 ? (
+                  expenses.slice(0, 3).map((expense) => (
+                    <div key={expense.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                      <div>
+                        <div className="font-medium">{expense.description}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {expense.group?.name} • Paid by {expense.paid_by_profile?.full_name || 'Unknown'} • {new Date(expense.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="font-semibold">
+                        ${Number(expense.amount).toFixed(2)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-muted-foreground">No recent activity</p>
+                    <Link to="/add-expense">
+                      <Button variant="link">Add your first expense</Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
