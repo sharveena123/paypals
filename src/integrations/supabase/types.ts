@@ -6,10 +6,180 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export type Database = {
+export interface Database {
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          id: string
+          full_name: string | null
+          email: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          full_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          full_name?: string | null
+          email?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      groups: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      group_members: {
+        Row: {
+          id: string
+          group_id: string
+          user_id: string | null
+          member_name: string | null
+          member_email: string | null
+          role: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          user_id?: string | null
+          member_name?: string | null
+          member_email?: string | null
+          role?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          user_id?: string | null
+          member_name?: string | null
+          member_email?: string | null
+          role?: string
+          created_at?: string
+        }
+      }
+      expenses: {
+        Row: {
+          id: string
+          group_id: string
+          paid_by: string | null
+          amount: number
+          description: string | null
+          date: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          paid_by?: string | null
+          amount: number
+          description?: string | null
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          paid_by?: string | null
+          amount?: number
+          description?: string | null
+          date?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      expense_splits: {
+        Row: {
+          id: string
+          expense_id: string
+          user_id: string
+          amount: number
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          expense_id: string
+          user_id: string
+          amount: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          expense_id?: string
+          user_id?: string
+          amount?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      settlements: {
+        Row: {
+          id: string
+          group_id: string
+          from_user: string | null
+          to_user: string | null
+          amount: number
+          status: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          group_id: string
+          from_user?: string | null
+          to_user?: string | null
+          amount: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          group_id?: string
+          from_user?: string | null
+          to_user?: string | null
+          amount?: number
+          status?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

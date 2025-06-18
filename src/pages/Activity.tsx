@@ -1,204 +1,205 @@
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Activity as ActivityIcon, Plus, Minus, DollarSign, Undo } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowLeft, Receipt, ArrowUpRight, ArrowDownLeft, Users } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import Navigation from "@/components/Navigation";
+
+type Expense = Database["public"]["Tables"]["expenses"]["Row"] & {
+  profiles: Database["public"]["Tables"]["profiles"]["Row"];
+  groups: Database["public"]["Tables"]["groups"]["Row"];
+};
+type Settlement = Database["public"]["Tables"]["settlements"]["Row"] & {
+  from_profile: Database["public"]["Tables"]["profiles"]["Row"];
+  to_profile: Database["public"]["Tables"]["profiles"]["Row"];
+  groups: Database["public"]["Tables"]["groups"]["Row"];
+};
 
 const Activity = () => {
-  const activities = [
-    {
-      id: 1,
-      type: "expense",
-      description: "Dinner at Tony's",
-      amount: 156.80,
-      group: "Weekend Friends",
-      user: "Alex",
-      action: "added",
-      time: "2 hours ago",
-      date: "2024-01-10"
-    },
-    {
-      id: 2,
-      type: "payment",
-      description: "Payment to Sarah",
-      amount: 39.20,
-      group: "Weekend Friends",
-      user: "Mike",
-      action: "paid",
-      time: "3 hours ago",
-      date: "2024-01-10"
-    },
-    {
-      id: 3,
-      type: "expense",
-      description: "Uber rides",
-      amount: 45.60,
-      group: "Weekend Friends",
-      user: "Sarah",
-      action: "added",
-      time: "5 hours ago",
-      date: "2024-01-10"
-    },
-    {
-      id: 4,
-      type: "expense",
-      description: "Grocery shopping",
-      amount: 89.30,
-      group: "Roommates",
-      user: "Alex",
-      action: "added",
-      time: "1 day ago",
-      date: "2024-01-09"
-    },
-    {
-      id: 5,
-      type: "payment",
-      description: "Payment to Jordan",
-      amount: 28.50,
-      group: "Roommates",
-      user: "Alex",
-      action: "paid",
-      time: "1 day ago",
-      date: "2024-01-09"
-    },
-    {
-      id: 6,
-      type: "expense",
-      description: "Coffee",
-      amount: 24.40,
-      group: "Weekend Friends",
-      user: "Mike",
-      action: "added",
-      time: "2 days ago",
-      date: "2024-01-08"
-    },
-    {
-      id: 7,
-      type: "expense",
-      description: "Internet bill",
-      amount: 55.20,
-      group: "Roommates",
-      user: "Jordan",
-      action: "added",
-      time: "3 days ago",
-      date: "2024-01-07"
-    },
-    {
-      id: 8,
-      type: "payment",
-      description: "Payment to Emma",
-      amount: 160.00,
-      group: "Mountain Trip",
-      user: "Alex",
-      action: "paid",
-      time: "1 week ago",
-      date: "2024-01-03"
-    }
-  ];
+  const [isLoading, setIsLoading] = useState(true);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case "expense":
-        return <Plus className="w-4 h-4 text-paypal-secondary" />;
-      case "payment":
-        return <DollarSign className="w-4 h-4 text-paypal-primary" />;
-      default:
-        return <ActivityIcon className="w-4 h-4 text-muted-foreground" />;
+  useEffect(() => {
+    fetchActivity();
+  }, []);
+
+  const fetchActivity = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+
+      // Fetch expenses
+      const { data: expensesData, error: expensesError } = await supabase
+        .from("expenses")
+        .select(`
+          *,
+          profiles:paid_by(full_name),
+          groups(name)
+        `)
+        .or(`paid_by.eq.${user.id},expense_splits.user_id.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (expensesError) throw expensesError;
+
+      // Fetch settlements
+      const { data: settlementsData, error: settlementsError } = await supabase
+        .from("settlements")
+        .select(`
+          *,
+          from_profile:from_user(full_name),
+          to_profile:to_user(full_name),
+          groups(name)
+        `)
+        .or(`from_user.eq.${user.id},to_user.eq.${user.id}`)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (settlementsError) throw settlementsError;
+
+      setExpenses(expensesData || []);
+      setSettlements(settlementsData || []);
+    } catch (error) {
+      console.error("Error fetching activity:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load activity",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getActivityColor = (type: string) => {
-    switch (type) {
-      case "expense":
-        return "border-l-paypal-secondary";
-      case "payment":
-        return "border-l-paypal-primary";
-      default:
-        return "border-l-muted-foreground";
-    }
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  return (
-    <div className="min-h-screen bg-muted/30">
-      {/* Header */}
-      <div className="bg-white border-b border-border">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center">
-            <Link to="/dashboard" className="mr-4">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground flex items-center">
-                <ActivityIcon className="w-6 h-6 mr-3" />
-                Activity Feed
-              </h1>
-              <p className="text-muted-foreground">All recent expenses and payments</p>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-muted rounded w-1/4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="h-16 bg-muted rounded"></div>
+              ))}
             </div>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="container mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Timeline of all expenses and payments across your groups
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className={`flex items-start gap-4 p-4 border-l-4 ${getActivityColor(activity.type)} bg-muted/30 rounded-r-lg hover:bg-muted/50 transition-colors`}
-                >
-                  <div className="flex-shrink-0 w-8 h-8 bg-white rounded-full border border-border flex items-center justify-center">
-                    {getActivityIcon(activity.type)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="font-medium text-foreground">
-                          {activity.user} {activity.action} "{activity.description}"
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-muted-foreground">{activity.group}</span>
-                          <span className="text-sm text-muted-foreground">•</span>
-                          <span className="text-sm text-muted-foreground">{activity.time}</span>
+  const allActivity = [
+    ...expenses.map(expense => ({
+      type: "expense" as const,
+      data: expense,
+      date: expense.created_at,
+    })),
+    ...settlements.map(settlement => ({
+      type: "settlement" as const,
+      data: settlement,
+      date: settlement.created_at,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  return (
+    <>
+      <Navigation />
+      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Link to="/dashboard" className="inline-flex items-center text-paypal-highlight hover:text-paypal-highlight/80">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Link>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Receipt className="w-5 h-5 mr-2" />
+                Recent Activity
+              </CardTitle>
+              <CardDescription>Your recent expenses and settlements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {allActivity.map((activity, index) => (
+                  <div
+                    key={`${activity.type}-${activity.data.id}`}
+                    className="flex items-center justify-between p-4 bg-muted/50 rounded-lg"
+                  >
+                    <div className="flex items-center space-x-4">
+                      {activity.type === "expense" ? (
+                        <div className="p-2 bg-paypal-primary/10 rounded-full">
+                          <Receipt className="w-5 h-5 text-paypal-primary" />
+                        </div>
+                      ) : (
+                        <div className="p-2 bg-paypal-highlight/10 rounded-full">
+                          <Users className="w-5 h-5 text-paypal-highlight" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">
+                          {activity.type === "expense" ? (
+                            activity.data.description
+                          ) : (
+                            `${activity.data.from_profile.full_name} paid ${activity.data.to_profile.full_name}`
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {activity.data.groups.name} • {formatDate(activity.date)}
                         </div>
                       </div>
-                      
-                      <div className="flex items-center gap-2 ml-4">
-                        <div className={`font-semibold ${
-                          activity.type === 'expense' ? 'text-paypal-secondary' : 'text-paypal-primary'
-                        }`}>
-                          {activity.type === 'expense' ? '+' : '-'}${activity.amount.toFixed(2)}
-                        </div>
-                        
-                        {activity.time.includes('hour') && (
-                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                            <Undo className="w-3 h-3" />
-                          </Button>
-                        )}
+                    </div>
+                    <div className="text-right">
+                      <div className={`font-semibold ${
+                        activity.type === "expense"
+                          ? "text-paypal-primary"
+                          : "text-paypal-highlight"
+                      }`}>
+                        ${activity.type === "expense"
+                          ? activity.data.amount.toFixed(2)
+                          : activity.data.amount.toFixed(2)}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {activity.type === "expense" ? "Expense" : "Settlement"}
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 text-center">
-              <Button variant="outline">Load More Activities</Button>
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+
+                {allActivity.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">No recent activity</p>
+                    <Button
+                      onClick={() => navigate("/add-expense")}
+                      className="mt-4 bg-paypal-primary text-black hover:bg-paypal-primary/90"
+                    >
+                      Add Your First Expense
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
