@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Users, Receipt, Activity, DollarSign } from "lucide-react";
+import { Plus, Users, Receipt, Activity, DollarSign, HandCoins } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
@@ -33,6 +33,12 @@ const Dashboard = () => {
                 <Button className="bg-paypal-primary text-black hover:bg-paypal-primary/90">
                   <Plus className="w-4 h-4 mr-2" />
                   Add Expense
+                </Button>
+              </Link>
+              <Link to="/settle-up">
+                <Button variant="outline" className="border-paypal-highlight text-paypal-highlight hover:bg-paypal-highlight hover:text-white">
+                  <HandCoins className="w-4 h-4 mr-2" />
+                  Settle Up
                 </Button>
               </Link>
               <Link to="/groups">
