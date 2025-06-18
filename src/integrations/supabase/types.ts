@@ -185,7 +185,10 @@ export interface Database {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_user_balance: {
+        Args: { user_uuid: string; group_uuid?: string }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

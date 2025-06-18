@@ -4,220 +4,50 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, User, Camera, LogOut } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import Navigation from "@/components/Navigation";
-
-type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-
-const currencies = [
-  { code: "USD", symbol: "$", name: "US Dollar" },
-  { code: "EUR", symbol: "€", name: "Euro" },
-  { code: "GBP", symbol: "£", name: "British Pound" },
-  { code: "CAD", symbol: "C$", name: "Canadian Dollar" },
-  { code: "AUD", symbol: "A$", name: "Australian Dollar" },
-  { code: "JPY", symbol: "¥", name: "Japanese Yen" },
-  { code: "INR", symbol: "₹", name: "Indian Rupee" },
-];
+import { ArrowLeft, User, Camera } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Profile = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [formData, setFormData] = useState({
+    name: "Alex Johnson",
+    email: "alex.johnson@email.com",
+    phone: "+1 (555) 123-4567"
+  });
+
   const [preferences, setPreferences] = useState({
     currency: "USD",
     darkMode: false,
     notifications: true,
     emailUpdates: true,
   });
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError) {
-          console.error("Auth error:", userError);
-          throw new Error(`Authentication error: ${userError.message}`);
-        }
-        
-        if (!user) {
-          navigate("/login");
-          return;
-        }
-
-        // Fetch profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id);
-
-        if (profileError) {
-          console.error("Profile fetch error:", profileError);
-          throw new Error(`Failed to fetch profile: ${profileError.message}`);
-        }
-
-        if (!profileData || profileData.length === 0) {
-          // Create profile if it doesn't exist
-          const { data: newProfile, error: createError } = await supabase
-            .from("profiles")
-            .insert({
-              id: user.id,
-              email: user.email,
-              full_name: user.user_metadata?.full_name || null,
-            })
-            .select()
-            .single();
-
-          if (createError) {
-            console.error("Profile creation error:", createError);
-            throw new Error(`Failed to create profile: ${createError.message}`);
-          }
-
-          setProfile(newProfile);
-        } else {
-          setProfile(profileData[0]);
-        }
-
-        // Fetch user preferences
-        const { data: preferencesData, error: preferencesError } = await supabase
-          .from("user_preferences")
-          .select("*")
-          .eq("user_id", user.id)
-          .single();
-
-        if (preferencesError && preferencesError.code !== "PGRST116") { // PGRST116 is "no rows returned"
-          console.error("Preferences fetch error:", preferencesError);
-          throw new Error(`Failed to fetch preferences: ${preferencesError.message}`);
-        }
-
-        if (preferencesData) {
-          setPreferences(preferencesData);
-        } else {
-          // Create default preferences
-          const { error: createPrefError } = await supabase
-            .from("user_preferences")
-            .insert({
-              user_id: user.id,
-              currency: "USD",
-              dark_mode: false,
-              notifications: true,
-              email_updates: true,
-            });
-
-          if (createPrefError) {
-            console.error("Preferences creation error:", createPrefError);
-            throw new Error(`Failed to create preferences: ${createPrefError.message}`);
-          }
-        }
-      } catch (error) {
-        console.error("Error in fetchProfile:", error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to load profile data",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [navigate, toast]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaving(true);
-
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error("Auth error:", userError);
-        throw new Error(`Authentication error: ${userError.message}`);
-      }
-      
-      if (!user) {
-        navigate("/login");
-        return;
-      }
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          full_name: profile?.full_name,
-          email: profile?.email,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id);
-
-      if (profileError) {
-        console.error("Profile update error:", profileError);
-        throw new Error(`Failed to update profile: ${profileError.message}`);
-      }
-
-      // Update preferences
-      const { error: preferencesError } = await supabase
-        .from("user_preferences")
-        .upsert({
-          user_id: user.id,
-          ...preferences,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (preferencesError) {
-        console.error("Preferences update error:", preferencesError);
-        throw new Error(`Failed to update preferences: ${preferencesError.message}`);
-      }
-
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      });
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update profile",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+    console.log("Update profile:", { formData, preferences });
+    // TODO: Implement actual profile update logic
   };
 
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("Sign out error:", error);
-        throw new Error(`Failed to sign out: ${error.message}`);
-      }
-      navigate("/login");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
+  const currencies = ["USD", "EUR", "GBP", "CAD", "AUD"];
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background to-muted p-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/4"></div>
-            <div className="h-64 bg-muted rounded"></div>
+  return (
+    <div className="min-h-screen bg-muted/30">
+      {/* Header */}
+      <div className="bg-white border-b border-border">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center">
+            <Link to="/dashboard" className="mr-4">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground flex items-center">
+                <User className="w-6 h-6 mr-3" />
+                Profile
+              </h1>
+              <p className="text-muted-foreground">Manage your account settings</p>
+            </div>
           </div>
         </div>
       </div>
@@ -253,14 +83,28 @@ const Profile = () => {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Profile Photo */}
+                <div className="flex items-center space-x-4">
+                  <div className="w-20 h-20 bg-paypal-primary rounded-full flex items-center justify-center">
+                    <User className="w-10 h-10 text-black" />
+                  </div>
+                  <div>
+                    <Button variant="outline" size="sm">
+                      <Camera className="w-4 h-4 mr-2" />
+                      Change Photo
+                    </Button>
+                    <p className="text-sm text-muted-foreground mt-1">JPG, PNG or GIF. Max 2MB.</p>
+                  </div>
+                </div>
+
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input
                       id="name"
-                      value={profile?.full_name || ""}
-                      onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
-                      placeholder="Enter your full name"
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -268,9 +112,19 @@ const Profile = () => {
                     <Input
                       id="email"
                       type="email"
-                      value={profile?.email || ""}
-                      onChange={(e) => setProfile(prev => prev ? { ...prev, email: e.target.value } : null)}
-                      placeholder="Enter your email"
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                     />
                   </div>
                 </div>
@@ -314,20 +168,33 @@ const Profile = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="emailUpdates">Email Updates</Label>
-                    <Switch
-                      id="emailUpdates"
-                      checked={preferences.emailUpdates}
-                      onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, emailUpdates: checked }))}
-                    />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Email Updates</Label>
+                    <p className="text-sm text-muted-foreground">Receive weekly summaries</p>
                   </div>
+                  <Switch
+                    checked={preferences.emailUpdates}
+                    onCheckedChange={(checked) => setPreferences(prev => ({ ...prev, emailUpdates: checked }))}
+                  />
                 </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                <Button type="submit" className="w-full" disabled={isSaving}>
-                  {isSaving ? "Saving..." : "Save Changes"}
-                </Button>
-              </form>
+          {/* Danger Zone */}
+          <Card className="border-destructive/20">
+            <CardHeader>
+              <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium">Delete Account</div>
+                  <div className="text-sm text-muted-foreground">Permanently delete your account and all data</div>
+                </div>
+                <Button variant="destructive">Delete Account</Button>
+              </div>
             </CardContent>
           </Card>
         </div>
